@@ -107,6 +107,7 @@ public:
     }
     return *this;
 };
+    friend std::ostream& operator<<(std::ostream& os, const ChessPiece& piece);
     
     /**
      * @brief Виртуальный деструктор
@@ -120,7 +121,7 @@ public:
     } else {
         --blackCount;
     }
-};
+}
     
     /**
      * @brief Чисто виртуальная функция для проверки возможности хода
@@ -131,15 +132,6 @@ public:
      * Каждая конкретная фигура должна реализовать свою логику проверки хода.
      */
     virtual bool canMoveTo(int newX, int newY) const = 0;
-    
-    /**
-     * @brief Чисто виртуальная функция для получения символа фигуры
-     * @return Символ фигуры в формате Unicode
-     * 
-     * Возвращает символьное представление фигуры для отображения.
-     */
-    virtual char getSymbol() const = 0;
-    
     /**
      * @brief Виртуальная функция для перемещения фигуры
      * @param newX Новая координата X
@@ -150,11 +142,12 @@ public:
      */
     virtual void moveTo(int newX, int newY) {
     if (newX < 0 || newX > 7 || newY < 0 || newY > 7) {
-        throw InvalidMoveException("Координаты за пределами доски (0-7)");
+        throw std::invalid_argument("Координаты за пределами доски (0-7)");
     }
     
     if (!canMoveTo(newX, newY)) {
-        throw InvalidMoveException("Фигура не может совершить такой ход");
+        throw std::invalid_argument("Фигура не может совершить такой ход");
+        
     }
     
     x = newX;
@@ -216,13 +209,17 @@ public:
      * @return Общее количество фигур
      */
     static int getTotalCount() { return whiteCount + blackCount; }
-    
-    // Правило пяти будет добавлено в следующем коммите
-    ChessPiece(const ChessPiece& other) = delete;
-    ChessPiece& operator=(const ChessPiece& other) = delete;
-    ChessPiece(ChessPiece&& other) = delete;
-    ChessPiece& operator=(ChessPiece&& other) = delete;
 };
+
+std::ostream& operator<<(std::ostream& os, const ChessPiece& piece) {
+    os << (piece.getColor() == Color::WHITE ? "W" : "B") << " ";
+    os << piece.getType();
+    int x, y;
+    piece.getPosition(x, y);
+    os << "[" << x << "," << y << "]";
+    return os;
+}
+
 int ChessPiece::whiteCount = 0;
 int ChessPiece::blackCount = 0;
 
@@ -255,7 +252,7 @@ public:
     : ChessPiece(col, posX, posY),
       canMoveHorizontally(horizontal),
       canMoveVertically(vertical),
-      canMoveDiagonally(diagonal) {};
+      canMoveDiagonally(diagonal) {}
     
     /**
      * @brief Проверяет возможность хода для скользящих фигур
@@ -358,10 +355,7 @@ protected:
         int deltaY;
     };
     
-    static const MovePattern* movePatterns = {
-    {2, 1}, {2, -1}, {-2, 1}, {-2, -1},
-    {1, 2}, {1, -2}, {-1, 2}, {-1, -2}
-};  ///< Шаблоны допустимых ходов
+    static const MovePattern movePatterns[8]; ///< Шаблоны допустимых ходов
     static int patternCount;                 ///< Количество шаблонов
     
 public:
@@ -372,7 +366,7 @@ public:
      * @param posY Начальная координата Y
      */
     JumpingPiece(Color col, int posX, int posY)
-    : ChessPiece(col, posX, posY) {};
+    : ChessPiece(col, posX, posY) {}
     
     /**
      * @brief Проверяет возможность хода для прыгающих фигур
@@ -448,6 +442,10 @@ public:
     virtual ~JumpingPiece() = default;
 };
 
+const JumpingPiece::MovePattern JumpingPiece::movePatterns[8] = {
+    {2, 1}, {2, -1}, {-2, 1}, {-2, -1},
+    {1, 2}, {1, -2}, {-1, 2}, {-1, -2}
+};
 int JumpingPiece::patternCount = 8;
 
 /**
@@ -465,7 +463,7 @@ public:
      * @param posX Начальная координата X
      * @param posY Начальная координата Y
      */
-    Knight(Color col, int posX, int posY);
+    Knight(Color col, int posX, int posY) : JumpingPiece(col, posX, posY) {}
     
     /**
      * @brief Получить тип фигуры
@@ -497,7 +495,7 @@ public:
      * @param posY Начальная координата Y
      */
     Rook(Color col, int posX, int posY)
-    : SlidingPiece(col, posX, posY, true, true, false) {};
+    : SlidingPiece(col, posX, posY, true, true, false) {}
     
     /**
      * @brief Получить тип фигуры
@@ -529,15 +527,7 @@ public:
      * @param posY Начальная координата Y
      */
     Bishop(Color col, int posX, int posY)
-    : SlidingPiece(col, posX, posY, false, false, true) {};
-    
-    /**
-     * @brief Получить символ слона
-     * @return Символ слона в формате Unicode
-     * 
-     * Переопределяет чисто виртуальную функцию базового класса.
-     */
-    virtual char getSymbol() const override;
+    : SlidingPiece(col, posX, posY, false, false, true) {}
     
     /**
      * @brief Получить тип фигуры
@@ -570,6 +560,14 @@ public:
     virtual ~CombinedPiece() = default;
     
     /**
+     * @brief Получить описание комбинированных возможностей
+     * @return Строковое описание возможностей фигуры
+     * 
+     * Чисто виртуальная функция, должна быть реализована в производных классах.
+     */
+    virtual std::string getCombinedAbilities() const = 0;
+    
+    /**
      * @brief Проверить специальные возможности фигуры
      * @return true если фигура имеет специальные возможности, false в противном случае
      * 
@@ -596,7 +594,19 @@ public:
      * @param posY Начальная координата Y
      */
     Queen(Color col, int posX, int posY)
-    : SlidingPiece(col, posX, posY, true, true, true) {};
+    : SlidingPiece(col, posX, posY, true, true, true) {}
+    
+    /**
+     * @brief Получить описание комбинированных возможностей
+     * @return Строковое описание возможностей ферзя
+     * 
+     * Реализует чисто виртуальную функцию интерфейса CombinedPiece.
+     */
+    virtual std::string getCombinedAbilities() const override {
+    return "Объединяет возможности ладьи (горизонталь/вертикаль) "
+           "и слона (диагональ). Может двигаться на любое количество клеток "
+           "в любом направлении. Является самой сильной фигурой на доске.";
+    }
     
     /**
      * @brief Проверить специальные возможности
@@ -621,6 +631,129 @@ public:
      */
     virtual ~Queen() = default;
 };
+
+/**
+ * @brief Класс шахматного короля
+ * 
+ * Король может двигаться на одну клетку в любом направлении.
+ * Имеет специальные статические счётчики для контроля количества королей.
+ * Реализует дополнительную логику для проверки рокировки.
+ */
+class King : public ChessPiece {
+private:
+    static int whiteKingCount;  ///< Счётчик белых королей
+    static int blackKingCount;  ///< Счётчик чёрных королей
+    
+public:
+    /**
+     * @brief Конструктор короля
+     * @param col Цвет фигуры
+     * @param posX Начальная координата X
+     * @param posY Начальная координата Y
+     * @throws std::logic_error если превышено допустимое количество королей
+     */
+    King(Color col, int posX, int posY)
+    : ChessPiece(col, posX, posY) {
+    // Проверка максимального количества королей
+    if ((color == Color::WHITE && whiteKingCount >= 1) ||
+        (color == Color::BLACK && blackKingCount >= 1)) {
+        throw std::logic_error("Не может быть более одного короля каждого цвета");
+    }
+    
+    if (color == Color::WHITE) {
+        ++whiteKingCount;
+    } else {
+        ++blackKingCount;
+    }
+};
+    
+    /**
+     * @brief Деструктор короля
+     * 
+     * Корректно обновляет статические счётчики королей.
+     */
+    virtual ~King() {
+    if (color == Color::WHITE) {
+        --whiteKingCount;
+    } else {
+        --blackKingCount;
+    }
 }
+    
+    /**
+     * @brief Проверяет возможность хода для короля
+     * @param newX Новая координата X
+     * @param newY Новая координата Y
+     * @return true если ход возможен, false в противном случае
+     * 
+     * Переопределяет чисто виртуальную функцию базового класса.
+     * Король может двигаться только на одну клетку в любом направлении.
+     */
+    virtual bool canMoveTo(int newX, int newY) const {
+    int posX, posY;
+    getPosition(posX, posY);
+    
+    // Фигура не может оставаться на месте
+    if (newX == posX && newY == posY) {
+        return false;
+    }
+    
+    // Проверка выхода за границы доски
+    if (newX < 0 || newX > 7 || newY < 0 || newY > 7) {
+        return false;
+    }
+    
+    // Король может двигаться только на одну клетку в любом направлении
+    int deltaX = abs(newX - posX);
+    int deltaY = abs(newY - posY);
+    
+    return deltaX <= 1 && deltaY <= 1;
+};
+    
+    /**
+     * @brief Получить тип фигуры
+     * @return Строковое представление типа фигуры
+     * 
+     * Переопределяет виртуальную функцию базового класса.
+     */
+    virtual std::string getType() const override { return "Король"; }
+    
+    /**
+     * @brief Получить количество королей каждого цвета
+     * @param[out] white Количество белых королей
+     * @param[out] black Количество чёрных королей
+     */
+    static void getKingCount(int& white, int& black) {
+        white = whiteKingCount;
+        black = blackKingCount;
+    }
+    
+    /**
+     * @brief Проверить корректность количества королей
+     * @return true если количество королей корректно, false в противном случае
+     * 
+     * Проверяет, что не более одного короля каждого цвета.
+     * Используется в статической функции validateBoardState().
+     */
+    static bool validateKings() {
+        return whiteKingCount <= 1 && blackKingCount <= 1;
+    }
+    
+    /**
+     * @brief Обновлённая проверка состояния доски
+     * @return true если состояние корректно, false в противном случае
+     * 
+     * Статическая функция, которая теперь также проверяет количество королей.
+     */
+    static bool validateBoardState() {
+    // Проверка базовых ограничений и количества королей
+    return whiteCount <= 16 && blackCount <= 16 && King::validateKings();
+}
+};
+int King::whiteKingCount = 0;
+int King::blackKingCount = 0;
+}
+
+
 
 #endif
