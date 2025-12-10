@@ -56,6 +56,52 @@ public:
         ++blackCount;
     }
 };
+
+    /**
+     * @brief Конструктор копирования
+     * @param other Фигура для копирования
+     * 
+     * Создаёт глубокую копию фигуры с обновлением статических счётчиков.
+     */
+    ChessPiece(const ChessPiece& other)
+    : color(other.color), x(other.x), y(other.y), hasMoved(other.hasMoved) {
+    if (color == Color::WHITE) {
+        ++whiteCount;
+    } else {
+        ++blackCount;
+    }
+}
+    /**
+     * @brief Оператор присваивания копированием
+     * @param other Фигура для копирования
+     * @return Ссылка на текущий объект
+     * 
+     * Выполняет глубокое копирование с корректным обновлением счётчиков.
+     */
+    ChessPiece& operator=(const ChessPiece& other) {
+    if (this != &other) {
+        // Уменьшаем старый счётчик
+        if (color == Color::WHITE) {
+            --whiteCount;
+        } else {
+            --blackCount;
+        }
+        
+        // Копируем данные
+        color = other.color;
+        x = other.x;
+        y = other.y;
+        hasMoved = other.hasMoved;
+        
+        // Увеличиваем новый счётчик
+        if (color == Color::WHITE) {
+            ++whiteCount;
+        } else {
+            ++blackCount;
+        }
+    }
+    return *this;
+};
     
     /**
      * @brief Виртуальный деструктор
