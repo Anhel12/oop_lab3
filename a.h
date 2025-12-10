@@ -339,8 +339,146 @@ public:
      * @brief Виртуальный деструктор
      */
     virtual ~SlidingPiece() = default;
+};
+
+/**
+ * @brief Базовый класс для фигур, которые могут "перепрыгивать" через другие фигуры
+ * 
+ * Класс реализует логику для фигур с фиксированными шаблонами движения,
+ * таких как конь в шахматах. Эти фигуры могут перемещаться через другие фигуры.
+ * Использует статические члены для хранения шаблонов движения.
+ */
+class JumpingPiece : public ChessPiece {
+protected:
+    /**
+     * @brief Структура для хранения шаблона движения
+     */
+    struct MovePattern {
+        int deltaX;
+        int deltaY;
+    };
     
-    // Правило пять наследуется от ChessPiece
+    static const MovePattern* movePatterns = {
+    {2, 1}, {2, -1}, {-2, 1}, {-2, -1},
+    {1, 2}, {1, -2}, {-1, 2}, {-1, -2}
+};  ///< Шаблоны допустимых ходов
+    static int patternCount;                 ///< Количество шаблонов
+    
+public:
+    /**
+     * @brief Конструктор прыгающей фигуры
+     * @param col Цвет фигуры
+     * @param posX Начальная координата X
+     * @param posY Начальная координата Y
+     */
+    JumpingPiece(Color col, int posX, int posY)
+    : ChessPiece(col, posX, posY) {};
+    
+    /**
+     * @brief Проверяет возможность хода для прыгающих фигур
+     * @param newX Новая координата X
+     * @param newY Новая координата Y
+     * @return true если ход возможен, false в противном случае
+     * 
+     * Переопределяет чисто виртуальную функцию базового класса.
+     * Реализует логику движения по фиксированным шаблонам.
+     */
+    virtual bool canMoveTo(int newX, int newY) const {
+    int posX, posY;
+    getPosition(posX, posY);
+    
+    // Фигура не может оставаться на месте
+    if (newX == posX && newY == posY) {
+        return false;
+    }
+    
+    // Проверка выхода за границы доски
+    if (newX < 0 || newX > 7 || newY < 0 || newY > 7) {
+        return false;
+    }
+    
+    // Проверка по шаблонам движения
+    for (int i = 0; i < patternCount; ++i) {
+        int targetX = posX + movePatterns[i].deltaX;
+        int targetY = posY + movePatterns[i].deltaY;
+        
+        if (targetX == newX && targetY == newY) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+    
+    /**
+     * @brief Получить количество допустимых ходов
+     * @return Количество возможных ходов с текущей позиции
+     * 
+     * Виртуальная функция с реализацией по умолчанию.
+     * Рассчитывает количество допустимых ходов на пустой доске.
+     */
+    virtual int getPossibleMoveCount() const {
+    int posX, posY;
+    getPosition(posX, posY);
+    int count = 0;
+    
+    for (int i = 0; i < patternCount; ++i) {
+        int targetX = posX + movePatterns[i].deltaX;
+        int targetY = posY + movePatterns[i].deltaY;
+        
+        if (targetX >= 0 && targetX <= 7 && targetY >= 0 && targetY <= 7) {
+            ++count;
+        }
+    }
+    
+    return count;
+};
+    
+    /**
+     * @brief Получить тип фигуры
+     * @return Строковое представление типа фигуры
+     * 
+     * Переопределяет виртуальную функцию базового класса.
+     */
+    virtual std::string getType() const override { return "Прыгающая фигура"; }
+    
+    /**
+     * @brief Виртуальный деструктор
+     */
+    virtual ~JumpingPiece() = default;
+};
+
+int JumpingPiece::patternCount = 8;
+
+/**
+ * @brief Класс шахматного коня
+ * 
+ * Конь двигается буквой 'Г': на 2 клетки в одном направлении
+ * и на 1 клетку в перпендикулярном направлении.
+ * Наследует от JumpingPiece с соответствующими шаблонами движения.
+ */
+class Knight : public JumpingPiece {
+public:
+    /**
+     * @brief Конструктор коня
+     * @param col Цвет фигуры
+     * @param posX Начальная координата X
+     * @param posY Начальная координата Y
+     */
+    Knight(Color col, int posX, int posY);
+    
+    /**
+     * @brief Получить тип фигуры
+     * @return Строковое представление типа фигуры
+     * 
+     * Переопределяет виртуальную функцию базового класса.
+     */
+    virtual std::string getType() const override { return "Конь"; }
+    
+    /**
+     * @brief Виртуальный деструктор
+     */
+    virtual ~Knight() = default;
 };
 }
 
