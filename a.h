@@ -50,11 +50,16 @@ public:
      */
     ChessPiece(Color col, int posX, int posY) 
     : color(col), x(posX), y(posY), hasMoved(false) {
-    if (color == Color::WHITE) {
-        ++whiteCount;
-    } else {
-        ++blackCount;
-    }
+        // Проверка корректности координат
+        if (posX < 0 || posX > 7 || posY < 0 || posY > 7) {
+            throw std::invalid_argument("Координаты должны быть в диапазоне 0-7");
+        }
+
+        if (color == Color::WHITE) {
+            ++whiteCount;
+        } else {
+            ++blackCount;
+        }
 };
 
     /**
@@ -221,6 +226,122 @@ public:
 int ChessPiece::whiteCount = 0;
 int ChessPiece::blackCount = 0;
 
+/**
+ * @brief Базовый класс для фигур, двигающихся по прямым линиям
+ * 
+ * Класс реализует общую логику для фигур, которые могут двигаться
+ * на любое количество клеток по горизонтали, вертикали или диагонали.
+ * Наследует от ChessPiece и добавляет специфичную для скользящих фигур логику.
+ * Предоставляет виртуальную функцию с реализацией по умолчанию getMoveType().
+ */
+class SlidingPiece : public ChessPiece {
+protected:
+    bool canMoveHorizontally;   ///< Может ли двигаться по горизонтали
+    bool canMoveVertically;     ///< Может ли двигаться по вертикали
+    bool canMoveDiagonally;     ///< Может ли двигаться по диагонали
+    
+public:
+    /**
+     * @brief Конструктор скользящей фигуры
+     * @param col Цвет фигуры
+     * @param posX Начальная координата X
+     * @param posY Начальная координата Y
+     * @param horizontal Может двигаться по горизонтали
+     * @param vertical Может двигаться по вертикали
+     * @param diagonal Может двигаться по диагонали
+     */
+    SlidingPiece(Color col, int posX, int posY,
+                         bool horizontal, bool vertical, bool diagonal)
+    : ChessPiece(col, posX, posY),
+      canMoveHorizontally(horizontal),
+      canMoveVertically(vertical),
+      canMoveDiagonally(diagonal) {};
+    
+    /**
+     * @brief Проверяет возможность хода для скользящих фигур
+     * @param newX Новая координата X
+     * @param newY Новая координата Y
+     * @return true если ход возможен, false в противном случае
+     * 
+     * Переопределяет чисто виртуальную функцию базового класса.
+     * Реализует логику движения по прямым линиям.
+     */
+    virtual bool canMoveTo(int newX, int newY) const {
+    int posX, posY;
+    getPosition(posX, posY);
+    
+    // Фигура не может оставаться на месте
+    if (newX == posX && newY == posY) {
+        return false;
+    }
+    
+    // Проверка выхода за границы доски
+    if (newX < 0 || newX > 7 || newY < 0 || newY > 7) {
+        return false;
+    }
+    
+    // Проверка горизонтального движения
+    if (newY == posY && canMoveHorizontally) {
+        return true;
+    }
+    
+    // Проверка вертикального движения
+    if (newX == posX && canMoveVertically) {
+        return true;
+    }
+    
+    // Проверка диагонального движения
+    int deltaX = abs(newX - posX);
+    int deltaY = abs(newY - posY);
+    if (deltaX == deltaY && canMoveDiagonally) {
+        return true;
+    }
+    
+    return false;
+};
+    
+    /**
+     * @brief Получить тип движения фигуры
+     * @return Строковое описание возможных направлений движения
+     * 
+     * Виртуальная функция с реализацией по умолчанию.
+     * Может быть переопределена в производных классах.
+     */
+    virtual std::string getMoveType() const {
+    if (canMoveHorizontally && canMoveVertically && canMoveDiagonally) {
+        return "Все направления (горизонталь, вертикаль, диагональ)";
+    } else if (canMoveHorizontally && canMoveVertically) {
+        return "Горизонталь и вертикаль";
+    } else if (canMoveHorizontally && canMoveDiagonally) {
+        return "Горизонталь и диагональ";
+    } else if (canMoveVertically && canMoveDiagonally) {
+        return "Вертикаль и диагональ";
+    } else if (canMoveHorizontally) {
+        return "Только горизонталь";
+    } else if (canMoveVertically) {
+        return "Только вертикаль";
+    } else if (canMoveDiagonally) {
+        return "Только диагональ";
+    } else {
+        return "Неизвестно";
+    }
+};
+    
+    /**
+     * @brief Получить тип фигуры
+     * @return Строковое представление типа фигуры
+     * 
+     * Переопределяет виртуальную функцию базового класса.
+     */
+    virtual std::string getType() const override { return "Скользящая фигура"; }
+    
+    /**
+     * @brief Виртуальный деструктор
+     */
+    virtual ~SlidingPiece() = default;
+    
+    // Правило пять наследуется от ChessPiece
+};
 }
 
 #endif
