@@ -480,6 +480,78 @@ public:
      */
     virtual ~Knight() = default;
 };
+
+/**
+ * @brief Класс шахматной ладьи
+ * 
+ * Ладья может двигаться на любое количество клеток по горизонтали или вертикали.
+ * Наследует от SlidingPiece с соответствующими параметрами движения.
+ * Является первой конкретной реализацией скользящей фигуры.
+ */
+class Rook : public SlidingPiece {
+public:
+    /**
+     * @brief Конструктор ладьи
+     * @param col Цвет фигуры
+     * @param posX Начальная координата X
+     * @param posY Начальная координата Y
+     */
+    Rook(Color col, int posX, int posY)
+    : SlidingPiece(col, posX, posY, true, true, false) {};
+    
+    /**
+     * @brief Получить тип фигуры
+     * @return Строковое представление типа фигуры
+     * 
+     * Переопределяет виртуальную функцию базового класса.
+     */
+    virtual std::string getType() const override { return "Ладья"; }
+    
+    /**
+     * @brief Виртуальный деструктор
+     */
+    virtual ~Rook() = default;
+};
+
+/**
+ * @brief Класс шахматного слона
+ * 
+ * Слон может двигаться на любое количество клеток по диагонали.
+ * Наследует от SlidingPiece с соответствующими параметрами движения.
+ * Демонстрирует альтернативную конфигурацию скользящей фигуры.
+ */
+class Bishop : public SlidingPiece {
+public:
+    /**
+     * @brief Конструктор слона
+     * @param col Цвет фигуры
+     * @param posX Начальная координата X
+     * @param posY Начальная координата Y
+     */
+    Bishop(Color col, int posX, int posY)
+    : SlidingPiece(col, posX, posY, false, false, true) {};
+    
+    /**
+     * @brief Получить символ слона
+     * @return Символ слона в формате Unicode
+     * 
+     * Переопределяет чисто виртуальную функцию базового класса.
+     */
+    virtual char getSymbol() const override;
+    
+    /**
+     * @brief Получить тип фигуры
+     * @return Строковое представление типа фигуры
+     * 
+     * Переопределяет виртуальную функцию базового класса.
+     */
+    virtual std::string getType() const override { return "Слон"; }
+    
+    /**
+     * @brief Виртуальный деструктор
+     */
+    virtual ~Bishop() = default;
+};
 }
 
 #endif
